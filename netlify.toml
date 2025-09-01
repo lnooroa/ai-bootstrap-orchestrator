@@ -1,5 +1,7 @@
 [build]
+  command = ""        # tell Netlify not to run npm/yarn
   publish = "."
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
