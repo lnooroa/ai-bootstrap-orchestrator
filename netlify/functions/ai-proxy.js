@@ -1,70 +1,88 @@
-async function callRealAI(message) {
-    showStatus('AI is processing your request...', 'success');
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: 'Method not allowed' };
+  }
+
+  try {
+    const body = JSON.parse(event.body);
+    const { provider, apiKey, message } = body;
     
-    try {
-        const provider = apiConfig.provider || 'gemini';
-        const providerConfig = AI_PROVIDERS[provider];
+    let apiResponse;
+    
+    if (provider === 'gemini') {
+      // Gemini API call
+      const geminiUrl = apiKey 
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`
+        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent`;
         
-        let apiKey = null;
-        if (apiConfig.apiKey) {
-            apiKey = decryptApiKey(apiConfig.apiKey);
-            if (!apiKey && !providerConfig.free) {
-                throw new Error('Failed to decrypt API key');
-            }
-        }
-        
-        incrementUsage();
-        
-        // Use Netlify Functions proxy
-        const response = await fetch('/.netlify/functions/ai-proxy', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                provider: provider,
-                apiKey: apiKey,
-                message: message,
-                files: files,
-                currentFile: currentFile
-            })
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Proxy error: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        const aiResponse = extractResponseText(data, provider);
-        
-        addMessage('ai', aiResponse);
-        
-        // Extract and apply code (same as before)
-        const codeBlocks = aiResponse.match(/```(?:html|css|javascript|js)?\n?([\s\S]*?)```/gi);
-        if (codeBlocks) {
-            codeBlocks.forEach((block, index) => {
-                const code = block.replace(/```(?:html|css|javascript|js)?\n?/, '').replace(/```$/, '');
-                
-                let filename;
-                if (aiResponse.toLowerCase().includes('index.html') || currentFile === 'index.html') {
-                    filename = 'index.html';
-                } else {
-                    filename = prompt(`What filename should I save code block ${index + 1} as?`, 'generated-code.html') || `generated-${index + 1}.html`;
-                }
-                
-                updateCode(code, filename);
-                if (!files[filename]) {
-                    addFileTab(filename);
-                }
-                switchToFile(filename);
-            });
-        }
-        
-        showStatus(`${providerConfig.name} response generated!`, 'success');
-        
-    } catch (error) {
-        addMessage('ai', `Sorry, I encountered an error: ${error.message}`);
-        showStatus('AI API error', 'error');
+      apiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `You are an AI development assistant. Help build web applications with HTML, CSS, JavaScript.\n\nUser: ${message}` }]
+          }]
+        })
+      });
+    } else if (provider === 'deepseek') {
+      // DeepSeek API call
+      apiResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-reasoner',
+          messages: [
+            { role: 'system', content: 'You are an AI development assistant.' },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 1500
+        })
+      });
+    } else {
+      // OpenAI API call
+      apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You are an AI development assistant.' },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 1500
+        })
+      });
     }
-}
+
+    const data = await apiResponse.json();
+    
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(data)
+    };
+    
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
