@@ -1,1003 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Bootstrap Orchestrator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 20px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            flex: 1;
-            min-height: 0;
-        }
-        .panel {
-            background: rgba(255,255,255,0.95);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-        }
-        .setup-panel {
-            background: rgba(255,193,7,0.95);
-            border: 2px solid #ffc107;
-        }
-        .setup-panel h3 {
-            color: #856404;
-        }
-        .chat-panel {
-            display: flex;
-            flex-direction: column;
-        }
-        .chat-history {
-            flex: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: #f9f9f9;
-            min-height: 300px;
-        }
-        .message {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 85%;
-            word-wrap: break-word;
-        }
-        .user-message {
-            background: #007bff;
-            color: white;
-            margin-left: auto;
-        }
-        .ai-message {
-            background: #e9ecef;
-            color: #333;
-        }
-        .input-area {
-            display: flex;
-            gap: 10px;
-        }
-        .input-area input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-        }
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        .btn-success:hover {
-            background: #1e7e34;
-        }
-        .btn-voice {
-            background: #28a745;
-            color: white;
-            min-width: 60px;
-        }
-        .btn-voice:hover {
-            background: #1e7e34;
-        }
-        .btn-voice.recording {
-            background: #dc3545;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .workspace-panel {
-            display: flex;
-            flex-direction: column;
-        }
-        .file-tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .tab {
-            padding: 8px 12px;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 6px 6px 0 0;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        .tab.active {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-        .tab .close {
-            margin-left: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .editor {
-            flex: 1;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            resize: none;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            min-height: 300px;
-        }
-        .editor:focus {
-            outline: none;
-            border-color: #007bff;
-        }
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        .status {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            text-align: center;
-        }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .status.warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #495057;
-        }
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .form-group small {
-            color: #6c757d;
-            font-size: 12px;
-        }
-        .security-info {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            border-left: 4px solid #007bff;
-        }
-        .rate-limit-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 10px;
-        }
-        .usage-meter {
-            width: 100px;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .usage-fill {
-            height: 100%;
-            background: #28a745;
-            transition: width 0.3s ease;
-        }
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            .header h1 {
-                font-size: 2em;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>AI Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f7f7f7;
+    }
+    header {
+      background: #222; color: #fff; padding: 10px;
+    }
+    .controls {
+      display: flex; gap: 10px; align-items: center;
+      padding: 10px; background: #eee;
+    }
+    .controls select, .controls input, .controls button {
+      padding: 6px;
+    }
+    #messages {
+      padding: 10px;
+      height: 400px; overflow-y: auto;
+      background: #fff;
+    }
+    .msg {
+      padding: 8px 10px; margin: 5px 0;
+      border-radius: 6px;
+      max-width: 80%;
+    }
+    .msg-user {
+      background: #d1e7dd; align-self: flex-end;
+    }
+    .msg-ai {
+      background: #e2e3e5; align-self: flex-start;
+    }
+    #statusBar {
+      padding: 6px 10px; font-size: 0.9em;
+    }
+    .status-success { color: green; }
+    .status-error { color: red; }
+    .status-info { color: #555; }
+    .input-bar {
+      display: flex; gap: 10px; padding: 10px;
+      background: #eee;
+    }
+    .input-bar textarea {
+      flex: 1; padding: 8px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 AI Bootstrap Orchestrator</h1>
-            <p>Your AI-powered development companion - Powered by real AI</p>
-        </div>
-        
-        <div class="main-content">
-            <!-- Setup/Chat Panel -->
-            <div class="panel" id="setupPanel">
-                <h3 style="margin-bottom: 15px;">⚙️ AI Configuration</h3>
-                
-                <div class="security-info">
-                    <strong>🔒 Security Features:</strong><br>
-                    • API keys encrypted in browser storage<br>
-                    • Rate limiting: 50 requests/hour<br>
-                    • Usage tracking and alerts<br>
-                    • Multi-provider support with cost optimization
-                </div>
+  <header>
+    <h2>AI Assistant</h2>
+  </header>
 
-                <div class="form-group">
-                    <label for="aiProvider">AI Provider</label>
-                    <select id="aiProvider" onchange="updateProviderConfig()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                        <option value="gemini">🚀 Gemini 2.5 Flash-Lite - $0.10/$0.40 (Recommended)</option>
-                        <option value="deepseek">💰 DeepSeek R1 - $0.55/$2.19 (Ultra Cheap Reasoning)</option>
-                        <option value="openai">🔧 OpenAI GPT-4o-mini - $0.15/$0.60 (Reliable)</option>
-                    </select>
-                    <small id="providerDescription">Fast, cheap, and multimodal - perfect for most tasks</small>
-                </div>
+  <!-- Provider & API key controls -->
+  <div class="controls">
+    <label for="aiProvider">Provider:</label>
+    <select id="aiProvider">
+      <option value="openai">OpenAI GPT-4o-mini</option>
+      <option value="gemini">Gemini 2.5 Flash-Lite</option>
+      <option value="deepseek">DeepSeek Chat</option>
+    </select>
 
-                <div class="form-group" id="apiKeyGroup">
-                    <label for="apiKey" id="apiKeyLabel">Google AI API Key</label>
-                    <input type="password" id="apiKey" placeholder="Enter your API key...">
-                    <small id="apiKeyHelp">Get your free API key from <a href="https://ai.google.dev/" target="_blank" id="apiKeyLink">ai.google.dev</a></small>
-                </div>
+    <input type="password" id="apiKey" placeholder="Optional API key" />
+    <button id="secureActivateBtn">Secure & Activate AI</button>
+  </div>
 
-                <div class="form-group">
-                    <label for="rateLimitHour">Hourly Request Limit</label>
-                    <input type="number" id="rateLimitHour" value="50" min="1" max="100">
-                    <small>Maximum API calls per hour (recommended: 50)</small>
-                </div>
+  <!-- Chat messages -->
+  <div id="messages"></div>
 
-                <div class="form-group">
-                    <label for="allowedDomains">Allowed Domains (optional)</label>
-                    <textarea id="allowedDomains" rows="3" placeholder="yourdomain.com&#10;localhost:3000&#10;*.netlify.app"></textarea>
-                    <small>Restrict usage to specific domains (one per line, supports wildcards)</small>
-                </div>
+  <!-- Status bar -->
+  <div id="statusBar" class="status-info">Ready.</div>
 
-                <button class="btn btn-success" onclick="saveConfig()">🔐 Secure & Activate AI</button>
-                
-                <div class="rate-limit-info">
-                    <span>Usage: <span id="usageCount">0</span>/50 requests</span>
-                    <div class="usage-meter">
-                        <div class="usage-fill" id="usageFill" style="width: 0%"></div>
-                    </div>
-                </div>
+  <!-- Input bar -->
+  <div class="input-bar">
+    <textarea id="userInput" rows="2" placeholder="Type your message..."></textarea>
+    <button id="sendBtn">Send</button>
+  </div>
 
-                <div id="configStatus" class="status" style="display: none;"></div>
-            </div>
-            
-            <!-- Chat Panel (hidden until configured) -->
-            <div class="panel chat-panel" id="chatPanel" style="display: none;">
-                <h3 style="margin-bottom: 15px;">💬 AI Assistant</h3>
-                <div class="chat-history" id="chatHistory">
-                    <div class="message ai-message">
-                        <strong>AI:</strong> Hello! I'm your AI development assistant powered by GPT-4. I can help you build anything - from simple websites to complex applications. What would you like to create today?
-                    </div>
-                </div>
-                <div class="input-area">
-                    <input type="text" id="messageInput" placeholder="What would you like me to build?">
-                    <button class="btn btn-voice" id="voiceBtn" title="Voice Input">🎤</button>
-                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
-                </div>
-            </div>
-            
-            <!-- Workspace Panel (hidden until configured) -->
-            <div class="panel workspace-panel" id="workspacePanel" style="display: none;">
-                <h3 style="margin-bottom: 15px;">🛠️ Workspace</h3>
-                <div class="file-tabs" id="fileTabs">
-                    <div class="tab active" data-file="index.html">
-                        index.html <span class="close" onclick="closeFile('index.html')">&times;</span>
-                    </div>
-                </div>
-                <textarea class="editor" id="codeEditor" placeholder="Your code will appear here...">&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-    &lt;title&gt;My App&lt;/title&gt;
-&lt;/head&gt;
-&lt;body&gt;
-    &lt;h1&gt;Hello World!&lt;/h1&gt;
-    &lt;p&gt;Ready to build something amazing with AI!&lt;/p&gt;
-&lt;/body&gt;
-&lt;/html&gt;</textarea>
-                <div class="toolbar">
-                    <button class="btn btn-small btn-primary" onclick="saveFile()">💾 Save</button>
-                    <button class="btn btn-small btn-primary" onclick="previewCode()">👁️ Preview</button>
-                    <button class="btn btn-small btn-primary" onclick="newFile()">📄 New File</button>
-                    <button class="btn btn-small btn-primary" onclick="exportProject()">📦 Export</button>
-                </div>
-                <div class="status" id="status"></div>
-            </div>
-        </div>
-    </div>
+  <!-- Full Script -->
+  <script>
+  const PROXY_ENDPOINT = "/.netlify/functions/ai-proxy";
 
-    <script>
-        // Global state
-        let currentFile = 'index.html';
-        let files = {
-            'index.html': document.getElementById('codeEditor').value
-        };
-        let apiConfig = null;
-        let isRecording = false;
-        let recognition;
-        let requestCount = 0;
-        let lastHourReset = Date.now();
-        
-        // AI Provider configurations
-        const AI_PROVIDERS = {
-            gemini: {
-                name: 'Gemini 2.5 Flash-Lite',
-                model: 'gemini-2.5-flash-lite',
-                endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
-                inputPrice: 0.10,
-                outputPrice: 0.40,
-                description: 'Fast, cheap, and multimodal - perfect for most tasks',
-                keyPlaceholder: 'Enter your Google AI API key...',
-                keyLink: 'https://ai.google.dev/',
-                keyHelp: 'Get your free API key from ai.google.dev',
-                free: true
-            },
-            deepseek: {
-                name: 'DeepSeek R1',
-                model: 'deepseek-reasoner',
-                endpoint: 'https://api.deepseek.com/v1/chat/completions',
-                inputPrice: 0.55,
-                outputPrice: 2.19,
-                description: 'Ultra-cheap reasoning model - 27x cheaper than OpenAI o1',
-                keyPlaceholder: 'sk-...',
-                keyLink: 'https://platform.deepseek.com/api_keys',
-                keyHelp: 'Get your API key from platform.deepseek.com/api_keys',
-                free: false
-            },
-            openai: {
-                name: 'OpenAI GPT-4o-mini',
-                model: 'gpt-4o-mini',
-                endpoint: 'https://api.openai.com/v1/chat/completions',
-                inputPrice: 0.15,
-                outputPrice: 0.60,
-                description: 'Proven reliability with wide ecosystem support',
-                keyPlaceholder: 'sk-...',
-                keyLink: 'https://platform.openai.com/api-keys',
-                keyHelp: 'Get your API key from platform.openai.com/api-keys',
-                free: false
-            }
-        };
-        
-        // Security and rate limiting
-        const STORAGE_KEY = 'ai_orchestrator_config';
-        const USAGE_KEY = 'ai_usage_tracking';
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadConfig();
-            setupVoiceRecognition();
-            setupAutoSave();
-            checkDomainSecurity();
-            updateProviderConfig(); // Initialize provider UI
-            
-            // Setup enter key for message input
-            document.getElementById('messageInput')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-        });
-        
-        function setupVoiceRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                recognition.lang = 'en-US';
-                
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    document.getElementById('messageInput').value = transcript;
-                    sendMessage();
-                };
-                
-                recognition.onerror = function(event) {
-                    showStatus('Voice recognition error: ' + event.error, 'error');
-                    stopRecording();
-                };
-                
-                recognition.onend = function() {
-                    stopRecording();
-                };
-                
-                document.getElementById('voiceBtn')?.addEventListener('click', toggleVoice);
-            } else {
-                const voiceBtn = document.getElementById('voiceBtn');
-                if (voiceBtn) voiceBtn.style.display = 'none';
-            }
-        }
-        
-        function setupAutoSave() {
-            setInterval(() => {
-                if (apiConfig) saveFile();
-            }, 30000); // Auto-save every 30 seconds
-        }
-        
-        function checkDomainSecurity() {
-            // Basic domain check
-            const currentDomain = window.location.hostname;
-            const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
-            const isSecure = window.location.protocol === 'https:' || isLocalhost;
-            
-            if (!isSecure) {
-                showConfigStatus('⚠️ Warning: Use HTTPS in production for API key security', 'warning');
-            }
-        }
-        
-        function encryptApiKey(key) {
-            // Simple XOR encryption for browser storage
-            const secret = 'ai_orchestrator_' + window.location.hostname;
-            let encrypted = '';
-            for (let i = 0; i < key.length; i++) {
-                encrypted += String.fromCharCode(key.charCodeAt(i) ^ secret.charCodeAt(i % secret.length));
-            }
-            return btoa(encrypted);
-        }
-        
-        function decryptApiKey(encryptedKey) {
-            try {
-                const secret = 'ai_orchestrator_' + window.location.hostname;
-                const encrypted = atob(encryptedKey);
-                let decrypted = '';
-                for (let i = 0; i < encrypted.length; i++) {
-                    decrypted += String.fromCharCode(encrypted.charCodeAt(i) ^ secret.charCodeAt(i % secret.length));
-                }
-                return decrypted;
-            } catch {
-                return null;
-            }
-        }
-        
-        function saveConfig() {
-            const provider = document.getElementById('aiProvider').value;
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const rateLimit = parseInt(document.getElementById('rateLimitHour').value) || 50;
-            const allowedDomains = document.getElementById('allowedDomains').value.trim().split('\n').filter(d => d.trim());
-            
-            const providerConfig = AI_PROVIDERS[provider];
-            
-            if (!apiKey && !providerConfig.free) {
-                showConfigStatus(`Please enter a valid ${providerConfig.name} API key`, 'error');
-                return;
-            }
-            
-            if (apiKey && provider === 'openai' && !apiKey.startsWith('sk-')) {
-                showConfigStatus('Please enter a valid OpenAI API key (starts with sk-)', 'error');
-                return;
-            }
-            
-            if (apiKey && provider === 'deepseek' && !apiKey.startsWith('sk-')) {
-                showConfigStatus('Please enter a valid DeepSeek API key (starts with sk-)', 'error');
-                return;
-            }
-            
-            // Domain validation
-            if (allowedDomains.length > 0) {
-                const currentDomain = window.location.hostname;
-                const isAllowed = allowedDomains.some(domain => {
-                    if (domain.startsWith('*')) {
-                        return currentDomain.endsWith(domain.slice(1));
-                    }
-                    return currentDomain === domain || domain === 'localhost';
-                });
-                
-                if (!isAllowed) {
-                    showConfigStatus(`Current domain (${currentDomain}) not in allowed list`, 'error');
-                    return;
-                }
-            }
-            
-            apiConfig = {
-                provider: provider,
-                apiKey: apiKey ? encryptApiKey(apiKey) : null,
-                rateLimit: Math.min(rateLimit, 100),
-                allowedDomains: allowedDomains,
-                created: Date.now()
-            };
-            
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(apiConfig));
-            resetUsageTracking();
-            showConfigured();
-            
-            const costText = `${providerConfig.inputPrice}/${providerConfig.outputPrice} per 1M tokens`;
-            showConfigStatus(`✅ ${providerConfig.name} configured securely! Rate limiting active. Cost: ${costText}`, 'success');
-        }
-        
-        function loadConfig() {
-            try {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    apiConfig = JSON.parse(stored);
-                    loadUsageTracking();
-                    
-                    // Verify API key can be decrypted (if exists)
-                    if (!apiConfig.apiKey || decryptApiKey(apiConfig.apiKey)) {
-                        // Set provider in dropdown
-                        const providerSelect = document.getElementById('aiProvider');
-                        if (providerSelect && apiConfig.provider) {
-                            providerSelect.value = apiConfig.provider;
-                            updateProviderConfig();
-                        }
-                        showConfigured();
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.warn('Failed to load config:', e);
-            }
-            
-            showSetup();
-        }
-        
-        function updateProviderConfig() {
-            const provider = document.getElementById('aiProvider').value;
-            const providerConfig = AI_PROVIDERS[provider];
-            
-            // Update UI elements
-            document.getElementById('apiKeyLabel').textContent = `${providerConfig.name} API Key`;
-            document.getElementById('apiKey').placeholder = providerConfig.keyPlaceholder;
-            document.getElementById('providerDescription').textContent = providerConfig.description;
-            document.getElementById('apiKeyHelp').innerHTML = `${providerConfig.keyHelp} <a href="${providerConfig.keyLink}" target="_blank">${providerConfig.keyLink.replace('https://', '')}</a>`;
-            
-            // Show/hide API key field for free providers
-            const apiKeyGroup = document.getElementById('apiKeyGroup');
-            if (providerConfig.free) {
-                apiKeyGroup.style.display = 'none';
-            } else {
-                apiKeyGroup.style.display = 'block';
-            }
-            
-            // Update cost info
-            const costInfo = `Input: ${providerConfig.inputPrice}/1M tokens | Output: ${providerConfig.outputPrice}/1M tokens`;
-            document.getElementById('providerDescription').textContent = `${providerConfig.description} (${costInfo})`;
-        }
-        
-        function showSetup() {
-            document.getElementById('setupPanel').className = 'panel setup-panel';
-            document.getElementById('chatPanel').style.display = 'none';
-            document.getElementById('workspacePanel').style.display = 'none';
-        }
-        
-        function showConfigured() {
-            document.getElementById('setupPanel').className = 'panel';
-            document.getElementById('chatPanel').style.display = 'flex';
-            document.getElementById('workspacePanel').style.display = 'flex';
-            updateUsageDisplay();
-        }
-        
-        function resetUsageTracking() {
-            requestCount = 0;
-            lastHourReset = Date.now();
-            localStorage.setItem(USAGE_KEY, JSON.stringify({
-                count: requestCount,
-                resetTime: lastHourReset
-            }));
-            updateUsageDisplay();
-        }
-        
-        function loadUsageTracking() {
-            try {
-                const usage = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
-                const hoursPassed = (Date.now() - usage.resetTime) / (1000 * 60 * 60);
-                
-                if (hoursPassed >= 1) {
-                    resetUsageTracking();
-                } else {
-                    requestCount = usage.count || 0;
-                    lastHourReset = usage.resetTime || Date.now();
-                    updateUsageDisplay();
-                }
-            } catch (e) {
-                resetUsageTracking();
-            }
-        }
-        
-        function updateUsageDisplay() {
-            if (!apiConfig) return;
-            
-            document.getElementById('usageCount').textContent = requestCount;
-            const percentage = (requestCount / apiConfig.rateLimit) * 100;
-            document.getElementById('usageFill').style.width = percentage + '%';
-            
-            if (percentage > 80) {
-                document.getElementById('usageFill').style.background = '#dc3545';
-            } else if (percentage > 60) {
-                document.getElementById('usageFill').style.background = '#ffc107';
-            }
-        }
-        
-        function incrementUsage() {
-            requestCount++;
-            localStorage.setItem(USAGE_KEY, JSON.stringify({
-                count: requestCount,
-                resetTime: lastHourReset
-            }));
-            updateUsageDisplay();
-        }
-        
-        function canMakeRequest() {
-            loadUsageTracking(); // Check if hour has reset
-            return requestCount < apiConfig.rateLimit;
-        }
-        
-        // Voice functionality
-        function toggleVoice() {
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        }
-        
-        function startRecording() {
-            if (recognition) {
-                recognition.start();
-                isRecording = true;
-                document.getElementById('voiceBtn').classList.add('recording');
-                document.getElementById('voiceBtn').innerHTML = '⏹️';
-            }
-        }
-        
-        function stopRecording() {
-            if (recognition) {
-                recognition.stop();
-            }
-            isRecording = false;
-            document.getElementById('voiceBtn').classList.remove('recording');
-            document.getElementById('voiceBtn').innerHTML = '🎤';
-        }
-        
-        // Chat functionality
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            if (!message || !apiConfig) return;
-            
-            if (!canMakeRequest()) {
-                showStatus('Rate limit reached. Try again next hour.', 'error');
-                return;
-            }
-            
-            addMessage('user', message);
-            input.value = '';
-            callRealAI(message);
-        }
-        
-        function addMessage(sender, message) {
-            const chatHistory = document.getElementById('chatHistory');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${message}`;
-            chatHistory.appendChild(messageDiv);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        }
-        
-        async function callRealAI(message) {
-            showStatus('AI is processing your request...', 'success');
-            
-            try {
-                const provider = apiConfig.provider || 'openai';
-                const providerConfig = AI_PROVIDERS[provider];
-                
-                let apiKey = null;
-                if (apiConfig.apiKey) {
-                    apiKey = decryptApiKey(apiConfig.apiKey);
-                    if (!apiKey) {
-                        throw new Error('Failed to decrypt API key');
-                    }
-                }
-                
-                incrementUsage();
-                
-                let response;
-                
-                if (provider === 'gemini') {
-                    response = await callGeminiAPI(message, apiKey, providerConfig);
-                } else if (provider === 'deepseek') {
-                    response = await callDeepSeekAPI(message, apiKey, providerConfig);
-                } else {
-                    response = await callOpenAIAPI(message, apiKey, providerConfig);
-                }
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`${providerConfig.name} API error: ${response.status} - ${errorText}`);
-                }
-                
-                const data = await response.json();
-                const aiResponse = extractResponseText(data, provider);
-                addMessage('ai', aiResponse);
-                
-                // Extract and apply code
-                const codeBlocks = aiResponse.match(/```(?:html|css|javascript|js)?\n?([\s\S]*?)```/gi);
-                if (codeBlocks) {
-                    codeBlocks.forEach((block, index) => {
-                        const code = block.replace(/```(?:html|css|javascript|js)?\n?/, '').replace(/```$/, '');
-                        
-                        let filename;
-                        if (aiResponse.toLowerCase().includes('index.html') || currentFile === 'index.html') {
-                            filename = 'index.html';
-                        } else {
-                            filename = prompt(`What filename should I save code block ${index + 1} as?`, 'generated-code.html') || `generated-${index + 1}.html`;
-                        }
-                        
-                        updateCode(code, filename);
-                        if (!files[filename]) {
-                            addFileTab(filename);
-                        }
-                        switchToFile(filename);
-                    });
-                }
-                
-                showStatus(`${providerConfig.name} response generated!`, 'success');
-                
-            } catch (error) {
-                addMessage('ai', `Sorry, I encountered an error with ${AI_PROVIDERS[apiConfig.provider || 'openai'].name}: ${error.message}`);
-                showStatus('AI API error', 'error');
-            }
-        }
-        
-        async function callGeminiAPI(message, apiKey, config) {
-            const url = apiKey 
-                ? `${config.endpoint}?key=${apiKey}`
-                : config.endpoint;
-                
-            return await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `You are an AI development assistant. Help users build web applications by generating HTML, CSS, and JavaScript code. Current files: ${Object.keys(files).join(', ')}. Current file: ${currentFile}.\n\n${message}`
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 2000
-                    }
-                })
-            });
-        }
-        
-        async function callDeepSeekAPI(message, apiKey, config) {
-            return await fetch(config.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: config.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `You are an AI development assistant. Help users build web applications by generating HTML, CSS, and JavaScript code. Current files: ${Object.keys(files).join(', ')}. Current file: ${currentFile}.`
-                        },
-                        {
-                            role: 'user',
-                            content: message
-                        }
-                    ],
-                    max_tokens: 2000,
-                    temperature: 0.7
-                })
-            });
-        }
-        
-        async function callOpenAIAPI(message, apiKey, config) {
-            return await fetch(config.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: config.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `You are an AI development assistant. Help users build web applications by generating HTML, CSS, and JavaScript code. Current files: ${Object.keys(files).join(', ')}. Current file: ${currentFile}.`
-                        },
-                        {
-                            role: 'user',
-                            content: message
-                        }
-                    ],
-                    max_tokens: 2000,
-                    temperature: 0.7
-                })
-            });
-        }
-        
-        function extractResponseText(data, provider) {
-            if (provider === 'gemini') {
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
-            } else {
-                return data.choices?.[0]?.message?.content || 'No response generated';
-            }
-        }
-        
-        // File management
-        function updateCode(code, filename = currentFile) {
-            files[filename] = code;
-            if (filename === currentFile) {
-                document.getElementById('codeEditor').value = code;
-            }
-            showStatus(`Updated ${filename}`, 'success');
-        }
-        
-        function saveFile() {
-            const code = document.getElementById('codeEditor').value;
-            files[currentFile] = code;
-            showStatus('File saved!', 'success');
-        }
-        
-        function newFile() {
-            const filename = prompt('Enter filename (with extension):');
-            if (filename && !files[filename]) {
-                files[filename] = '';
-                addFileTab(filename);
-                switchToFile(filename);
-            }
-        }
-        
-        function switchToFile(filename) {
-            files[currentFile] = document.getElementById('codeEditor').value;
-            currentFile = filename;
-            document.getElementById('codeEditor').value = files[filename] || '';
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.file === filename);
-            });
-        }
-        
-        function addFileTab(filename) {
-            const tabsContainer = document.getElementById('fileTabs');
-            const tab = document.createElement('div');
-            tab.className = 'tab';
-            tab.dataset.file = filename;
-            tab.innerHTML = `${filename} <span class="close" onclick="closeFile('${filename}')">&times;</span>`;
-            tab.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('close')) {
-                    switchToFile(filename);
-                }
-            });
-            tabsContainer.appendChild(tab);
-        }
-        
-        function closeFile(filename) {
-            if (Object.keys(files).length <= 1) {
-                showStatus('Cannot close the last file', 'error');
-                return;
-            }
-            
-            delete files[filename];
-            document.querySelector(`[data-file="${filename}"]`).remove();
-            
-            if (currentFile === filename) {
-                const remainingFile = Object.keys(files)[0];
-                switchToFile(remainingFile);
-            }
-        }
-        
-        function previewCode() {
-            const code = document.getElementById('codeEditor').value;
-            const blob = new Blob([code], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
-        }
-        
-        function exportProject() {
-            const projectData = {
-                files: files,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'project-export.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-        
-        function showStatus(message, type = 'success') {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 3000);
-        }
-        
-        function showConfigStatus(message, type = 'success') {
-            const statusDiv = document.getElementById('configStatus');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
-        }
-        
-        // Auto-save on editor change
-        document.getElementById('codeEditor').addEventListener('input', function() {
-            clearTimeout(this.saveTimeout);
-            this.saveTimeout = setTimeout(() => {
-                files[currentFile] = this.value;
-            }, 2000);
-        });
-    </script>
+  const AI_PROVIDERS = {
+    openai:  { id: "openai",  name: "OpenAI",  model: "gpt-4o-mini" },
+    gemini:  { id: "gemini",  name: "Gemini",  model: "gemini-2.5-flash-lite" },
+    deepseek:{ id: "deepseek",name: "DeepSeek",model: "deepseek-chat" }
+  };
+
+  const apiConfig = { provider: "openai", apiKeyCipher: null };
+
+  function $(sel){ return document.querySelector(sel); }
+  function showStatus(msg, type="info"){
+    const el=$("#statusBar");
+    if(!el) return console.log(`[${type}] ${msg}`);
+    el.textContent=msg; el.className="";
+    el.classList.add(type==="error"?"status-error":type==="success"?"status-success":"status-info");
+  }
+  function addMessage(role,text){
+    const wrap=$("#messages"); if(!wrap) return console.log(`${role}:`,text);
+    const item=document.createElement("div");
+    item.className=role==="user"?"msg msg-user":"msg msg-ai";
+    item.textContent=text; wrap.appendChild(item); wrap.scrollTop=wrap.scrollHeight;
+  }
+  function incrementUsage(){}
+  function updateCode(){} function addFileTab(){} function switchToFile(){}
+
+  function encryptApiKey(p){try{return btoa(unescape(encodeURIComponent(p)));}catch{return null;}}
+  function decryptApiKey(c){try{return decodeURIComponent(escape(atob(c)));}catch{return null;}}
+
+  function readProviderFromUI(){
+    const sel=$("#aiProvider");
+    if(sel&&sel.value) apiConfig.provider=sel.value.toLowerCase();
+    if(!AI_PROVIDERS[apiConfig.provider]) apiConfig.provider="openai";
+    return apiConfig.provider;
+  }
+  function readKeyFromUI(){const input=$("#apiKey");return input&&input.value?input.value.trim():"";}
+
+  async function callAIProxy({provider,model,message,system,apiKeyOverride}){
+    const payload={provider,model,message,system:system||"You are an AI development assistant."};
+    if(apiKeyOverride) payload.apiKey=apiKeyOverride;
+    const res=await fetch(PROXY_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const txt=await res.text(); let data; try{data=JSON.parse(txt);}catch{throw new Error(`Proxy non-JSON: ${txt}`);}
+    if(!res.ok){throw new Error(data?.error||res.status+" "+txt);} return data;
+  }
+
+  async function callRealAI(message){
+    showStatus("AI is processing…","info");
+    try{
+      const providerId=readProviderFromUI();
+      const provider=AI_PROVIDERS[providerId];
+      const apiKey=apiConfig.apiKeyCipher?decryptApiKey(apiConfig.apiKeyCipher):null;
+      if(!message||!message.trim()) throw new Error("Please enter a prompt.");
+      incrementUsage();
+      const data=await callAIProxy({provider:provider.id,model:provider.model,message:message.trim(),apiKeyOverride:apiKey||undefined});
+      const text=(data&&typeof data.text==="string"&&data.text.trim())?data.text.trim():extractResponseText(data,provider.id);
+      addMessage("ai",text);
+      showStatus(`AI response from ${data.provider} (${data.model}).`,"success");
+      return text;
+    }catch(err){console.error(err);showStatus(err.message||"AI request failed.","error");throw err;}
+  }
+
+  function extractResponseText(data,provider){
+    const raw=data?.raw||data;
+    if(provider==="gemini"){
+      const parts=raw?.candidates?.[0]?.content?.parts;
+      if(Array.isArray(parts)) return parts.map(p=>p?.text||"").join("").trim()||"No response.";
+      return raw?.candidates?.[0]?.content?.parts?.[0]?.text||"No response.";
+    }
+    return raw?.choices?.[0]?.message?.content||"No response.";
+  }
+
+  function wireUI(){
+    const sel=$("#aiProvider");
+    if(sel){sel.addEventListener("change",()=>{readProviderFromUI();showStatus(`Provider set to ${AI_PROVIDERS[apiConfig.provider].name}.`,"success");}); readProviderFromUI();}
+    const btn=$("#secureActivateBtn");
+    if(btn){btn.addEventListener("click",()=>{const key=readKeyFromUI();if(!key){apiConfig.apiKeyCipher=null;showStatus("API key cleared.","success");return;}
+      const cipher=encryptApiKey(key); if(!cipher)return showStatus("Failed to secure API key.","error");
+      apiConfig.apiKeyCipher=cipher; showStatus(`${AI_PROVIDERS[apiConfig.provider].name} configured securely!`,"success");});}
+    const send=$("#sendBtn"),input=$("#userInput");
+    if(send&&input){send.addEventListener("click",async()=>{const msg=input.value;if(!msg.trim())return showStatus("Enter a prompt.","error");addMessage("user",msg.trim());input.value="";try{await callRealAI(msg);}catch{}});}
+  }
+  document.addEventListener("DOMContentLoaded",wireUI);
+
+  window.callRealAI=callRealAI;
+  </script>
 </body>
 </html>
